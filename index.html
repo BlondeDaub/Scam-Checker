@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scam Checker</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2457d6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Scam Checker">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1b1f27;--muted:#5d6675;--line:#e2e6ec;--accent:#2457d6;--accent-t:#fff;--ok:#1b8a4b;--warn:#c27a00;--bad:#c9302c;--okb:#e6f5ec;--warnb:#fff3d9;--badb:#fde8e7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2128;--text:#eceff4;--muted:#9aa4b2;--line:#2c323c;--accent:#6b97ff;--accent-t:#0b1220;--ok:#4cc585;--warn:#f0b24a;--bad:#ff7a73;--okb:#173324;--warnb:#3a2d12;--badb:#3d1c1b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2128;--text:#eceff4;--muted:#9aa4b2;--line:#2c323c;--accent:#6b97ff;--accent-t:#0b1220;--ok:#4cc585;--warn:#f0b24a;--bad:#ff7a73;--okb:#173324;--warnb:#3a2d12;--badb:#3d1c1b;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:600px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.6rem;margin:0 0 6px}h2{font-size:1.15rem;margin:0 0 8px}
+p{margin:0 0 12px}.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:14px 16px;width:100%;margin-top:8px;min-height:48px}
+button.primary{background:var(--accent);color:var(--accent-t);border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.6}
+.row{display:flex;gap:10px}.row button{margin-top:8px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.q{font-size:1.2rem;font-weight:600;margin-bottom:6px}
+.hint{font-size:.92rem;color:var(--muted);margin-bottom:10px}
+.gauge{text-align:center;border-radius:16px;padding:20px;margin-bottom:14px}
+.gauge b{display:block;font-size:2.6rem;line-height:1.1}
+.gauge span{font-weight:600}
+.low{background:var(--okb);color:var(--ok)}.med{background:var(--warnb);color:var(--warn)}.high{background:var(--badb);color:var(--bad)}
+ul{padding-left:20px;margin:0 0 4px}li{margin-bottom:8px}
+li small{display:block;color:var(--muted)}
+.btn.p{background:var(--accent);color:var(--accent-t);border-color:var(--accent);font-weight:600}
+ol{padding-left:20px;margin:0 0 10px}
+.btn{display:block;text-align:center;text-decoration:none;padding:14px 16px;border-radius:12px;border:1px solid var(--line);color:var(--text);min-height:48px;margin-top:8px}
+.note{font-size:.85rem;color:var(--muted);text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+// ---- SETTINGS: fill these in. If left empty, the matching section is simply not shown. ----
+var DONATE_URL="";   // e.g. "https://ko-fi.com/yourname"
+var BIZ_EMAIL="";    // e.g. "hello@yourdomain.co.uk"
+// -----------------------------------------------------------------------------------------
+var QS=[
+{t:"Did they contact you first, out of the blue?",h:"A call, text, email, DM or pop-up you didn’t ask for.",w:1,f:"Unexpected contact",tip:"Don’t trust unsolicited contact. Look up the organization yourself and reach out through its official website or app."},
+{t:"Are you being rushed to act right now?",h:"“Act today,” “last chance,” “your account will be closed.”",w:2,f:"Pressure to act fast",tip:"Urgency is a classic tactic to stop you thinking. Real organizations give you time to verify."},
+{t:"Are they asking for payment by gift card, crypto, wire transfer, or a payment app?",h:"Or asking you to buy gift cards and read out the numbers.",w:4,c:1,f:"Untraceable payment method",tip:"Legitimate businesses and agencies don’t demand gift cards, crypto or wire transfers. This is the strongest scam signal."},
+{t:"Are they asking for passwords, one-time codes, PINs, or ID numbers?",h:"Bank details, National Insurance number, verification codes.",w:4,c:1,f:"Request for sensitive codes or details",tip:"No real bank, company or support agent will ask for your password or a code sent to your phone."},
+{t:"Do they claim to be a bank, government agency, tech support, or a company you know?",h:"Anyone can claim this. Caller ID and logos can be faked.",w:2,f:"Claims to be an authority",tip:"Hang up and call the organization back using a number from its official website or your card. For your bank, you can dial 159."},
+{t:"Are you promised a prize, big returns, or “guaranteed” profit?",h:"Lottery wins, investment tips, easy money, inheritances.",w:3,f:"Too-good-to-be-true promise",tip:"If you didn’t enter, you didn’t win. Guaranteed high returns don’t exist."},
+{t:"Were you told to keep it secret?",h:"Not to tell family, your bank, or the store clerk.",w:3,f:"Secrecy demanded",tip:"Scammers isolate you so no one can warn you. Tell someone you trust right away."},
+{t:"Are you asked to click a link, install an app, or give remote access to your device?",h:"Including “verify your account” links and screen-sharing tools.",w:3,f:"Link, download or remote-access request",tip:"Don’t click or install. Go to the real site by typing its address yourself."},
+{t:"Are you being threatened?",h:"Arrest, lawsuit, frozen account, deportation, or harm to someone you know.",w:3,f:"Threats or intimidation",tip:"Government agencies don’t threaten arrest over the phone or by text. Hang up and verify independently."},
+{t:"Do you have to pay a fee first to get a loan, job, prize, or refund?",h:"Or are you sent a check and asked to send some money back?",w:3,f:"Upfront fee or overpayment",tip:"Real loans, jobs and prizes don’t require upfront fees. Check overpayments are a common fraud that bounces later."},
+{t:"Is it someone you’ve only met online who now needs money?",h:"A romantic interest, “friend,” or family member in an emergency.",w:3,f:"Online relationship asking for money",tip:"Call the real person on a number you already know. Never send money to someone you haven’t met in person."},
+{t:"Do they refuse to let you verify, or discourage you from calling back?",h:"Won’t give details, gets angry, or keeps you on the line.",w:2,f:"Avoids verification",tip:"Legitimate contacts welcome verification. Resistance is a red flag."},
+{t:"Does anything look off about the message or sender?",h:"Generic greeting, spelling errors, odd email address or number, mismatched web address.",w:1,f:"Suspicious details",tip:"Check the sender’s address or number carefully and search for the exact wording online."}
+];
+var app=document.getElementById("app"),ans=[],i=-1,act="none",REP="";
+function el(h){var d=document.createElement("div");d.innerHTML=h;return d}
+function intro(){
+app.innerHTML='<h1>🛡️ Scam Checker</h1><p class="muted">Answer a few quick yes/no questions about a message, call, or offer. You’ll get a risk score and clear next steps.</p><div class="card"><p>It takes about two minutes. Nothing you answer here is stored.</p><button class="primary" id="go">Start</button></div><a class="btn" href="learn.html">📖 Scam guide: what to watch out for</a><p class="note">This is a guide, not a guarantee. When in doubt, verify through official channels.</p>'+extras()+'<p class="note"><a href="privacy.html">Privacy notice</a></p>';
+document.getElementById("go").onclick=function(){ans=[];i=0;q()}}
+function q(){
+if(i>=QS.length)return acted();
+var x=QS[i];
+app.innerHTML='<div class="bar"><i style="width:'+(i/(QS.length+1)*100)+'%"></i></div><div class="card"><p class="muted">Question '+(i+1)+' of '+(QS.length+1)+'</p><div class="q"></div><div class="hint"></div><button class="primary" data-a="1">Yes</button><button data-a="0">No</button><button data-a="-1">Not sure</button></div>'+(i>0?'<button id="back">← Back</button>':'');
+app.querySelector(".q").textContent=x.t;app.querySelector(".hint").textContent=x.h;
+app.querySelectorAll("[data-a]").forEach(function(b){b.onclick=function(){ans[i]=+b.dataset.a;i++;q()}});
+var bk=document.getElementById("back");if(bk)bk.onclick=function(){i--;q()}}
+function acted(){
+app.innerHTML='<div class="bar"><i style="width:'+(QS.length/(QS.length+1)*100)+'%"></i></div><div class="card"><p class="muted">Last question</p><div class="q">Have you already responded?</div><div class="hint">This changes the advice we give you.</div><button data-v="none">No, I haven’t done anything</button><button data-v="info">I clicked a link or shared info/codes</button><button data-v="money">I sent money or gift card numbers</button></div><button id="back">← Back</button>';
+app.querySelectorAll("[data-v]").forEach(function(b){b.onclick=function(){act=b.dataset.v;report()}});
+document.getElementById("back").onclick=function(){i=QS.length-1;q()}}
+function extras(){var h="";
+if(BIZ_EMAIL)h+='<div class="card"><h2>Run a bank, charity or council?</h2><p class="muted">Get a version of this checker with your own branding for your customers.</p><a class="btn" href="mailto:'+encodeURI(BIZ_EMAIL)+'?subject=Scam%20Checker%20for%20my%20organisation">Get in touch</a></div>';
+if(DONATE_URL)h+='<div class="card"><h2>Support this free tool</h2><p class="muted">Scam Checker is free and has no ads. If it helped, you can chip in towards running costs. This is optional and never affects your result.</p><a class="btn" href="'+encodeURI(DONATE_URL)+'" target="_blank" rel="noopener noreferrer">Donate (opens another site)</a></div>';
+return h}
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function report(){
+var raw=0,crit=false,fl=[];
+QS.forEach(function(x,k){if(ans[k]===1){raw+=x.w;fl.push(x);if(x.c)crit=true}});
+var pct=Math.min(100,Math.round(raw/18*100*1.4));if(crit)pct=Math.max(pct,88);if(act!=="none")pct=Math.max(pct,60);
+var lvl,lab,cls,sum;
+if(pct>=70){cls="high";lab="Very likely a scam";sum="Stop all contact. Don’t pay, click, or share anything."}
+else if(pct>=35){cls="med";lab="Suspicious";sum="Pause and verify independently before doing anything."}
+else{cls="low";lab="Low risk";sum="No major warning signs, but stay careful and verify if money or personal info is involved."}
+var unsure=ans.filter(function(a){return a===-1}).length;
+var steps={high:["Stop replying. Don’t click links, open attachments, or call numbers they gave you.","Block the sender and delete the message.","Tell a trusted friend or family member what happened.","Report it (see below)."],med:["Don’t respond or act yet.","Contact the organization using a phone number or website you find yourself, not the one in the message.","Search online for the exact wording plus “scam.”","If it still seems off, treat it as a scam and report it."],low:["Verify the sender through an official channel if anything is still unclear.","Never share codes or passwords, even if everything looks fine.","If something changes (urgency, payment requests), re-run this check."]}[cls];
+var h='<div class="gauge '+cls+'"><b>'+pct+'%</b><span>'+lab+'</span></div><div class="card"><p>'+sum+(unsure?' <span class="muted">('+unsure+' “not sure” answers weren’t counted. Try to check them.)</span>':'')+'</p></div>';
+h+='<div class="card"><h2>Red flags you reported</h2>'+(fl.length?'<ul>'+fl.map(function(x){return'<li><b>'+esc(x.f)+'</b><small>'+esc(x.tip)+'</small></li>'}).join("")+'</ul>':'<p class="muted">None.</p>')+'</div>';
+h+='<div class="card"><h2>What to do next</h2><ul>'+steps.map(function(s){return'<li>'+esc(s)+'</li>'}).join("")+'</ul></div>';
+if(act==="info")h+='<div class="card"><h2>Because you shared info or clicked</h2><ul><li>Change passwords for affected accounts, starting with email and banking. Turn on two-factor authentication.</li><li>Call your bank or card issuer and tell them. Watch statements closely.</li><li>If you installed an app or gave remote access, uninstall it, disconnect from the internet, and run a security scan.</li><li>If ID details were shared, check your credit report and consider Cifas Protective Registration.</li></ul></div>';
+if(act==="money")h+='<div class="card"><h2>Because you sent money</h2><ul><li>Act now: call your bank or payment provider (dial 159 to reach your bank) and ask to stop or recall the payment. Speed matters.</li><li>Bank transfer scams may be eligible for reimbursement under the UK’s APP fraud rules, so ask your bank.</li><li>Gift cards: contact the card company with the card numbers and receipts.</li><li>Crypto: report to the exchange you used.</li><li>Expect follow-up “recovery” scams. Anyone offering to get your money back for a fee is also a scammer.</li></ul></div>';
+var rn=(pct>=70||act!=="none");
+if(rn){var st='';
+if(act==="money")st+='<li><b>Call your bank now.</b> Dial 159 or use the number on your card, and ask them to stop or recall the payment. The sooner you call, the better.</li>';
+if(act==="info")st+='<li><b>Call your bank</b> (dial 159) if you shared bank details or codes, and change the passwords for any affected accounts.</li>';
+st+='<li><b>Report it to the police:</b> reportfraud.police.uk or 0300 123 2040 (England, Wales and Northern Ireland). In Scotland, call Police Scotland on 101.</li><li><b>Forward scam texts to 7726</b> (free) and scam emails to report@phishing.gov.uk.</li>';
+h+='<div class="card" style="border-color:var(--bad)"><h2>🚨 Report this scam</h2><p>Reporting helps the police stop these criminals and protect other people. It only takes a few minutes.</p><ol>'+st+'</ol><p><b>Have ready:</b> phone numbers, email addresses, website links, dates and times, any payment details, and screenshots. Take screenshots before you delete anything.</p><p class="muted">If you’re in immediate danger, call 999.</p><a class="btn p" href="https://www.reportfraud.police.uk/" target="_blank" rel="noopener noreferrer">Report this scam (opens another site)</a></div>'}
+else h+='<div class="card"><h2>Where to report</h2><ul><li><b>Report Fraud</b> (England, Wales, NI): reportfraud.police.uk or 0300 123 2040. In Scotland, call Police Scotland on 101.</li><li><b>Suspicious texts:</b> forward to 7726 (free).</li><li><b>Suspicious emails:</b> forward to report@phishing.gov.uk.</li><li><b>Investment scams:</b> check the FCA Warning List at fca.org.uk/scamsmart.</li><li>If you’re in immediate danger, call 999.</li></ul><p class="muted">Reporting helps protect others. <a href="learn.html">Read the Scam Guide</a> for how to stay safe.</p></div>';
+h+='<button id="copy">Copy report</button><button id="again">Check something else</button>'+((act==="none"&&pct<70)?extras():'')+'<p class="note">This tool gives guidance only and can’t guarantee whether something is or isn’t a scam. <a href="privacy.html">Privacy notice</a></p>';
+app.innerHTML=h;window.scrollTo(0,0);
+REP="Scam Checker report\nRisk: "+pct+"% – "+lab+"\nRed flags: "+(fl.length?fl.map(function(x){return x.f}).join("; "):"none")+"\nAlready responded: "+({none:"no",info:"shared info/clicked",money:"sent money"}[act])+"\nNext steps: "+steps.join(" ");
+document.getElementById("again").onclick=function(){act="none";intro()};
+document.getElementById("copy").onclick=function(){var b=this;try{navigator.clipboard.writeText(REP).then(function(){b.textContent="Copied ✓"},function(){b.textContent="Couldn’t copy"})}catch(e){b.textContent="Couldn’t copy"}};
+}
+try{if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0)navigator.serviceWorker.register("sw.js")}catch(e){}
+intro();
+</script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scam Checker</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2457d6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Scam Checker">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1b1f27;--muted:#5d6675;--line:#e2e6ec;--accent:#2457d6;--accent-t:#fff;--ok:#1b8a4b;--warn:#c27a00;--bad:#c9302c;--okb:#e6f5ec;--warnb:#fff3d9;--badb:#fde8e7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1d2128;--text:#eceff4;--muted:#9aa4b2;--line:#2c323c;--accent:#6b97ff;--accent-t:#0b1220;--ok:#4cc585;--warn:#f0b24a;--bad:#ff7a73;--okb:#173324;--warnb:#3a2d12;--badb:#3d1c1b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1d2128;--text:#eceff4;--muted:#9aa4b2;--line:#2c323c;--accent:#6b97ff;--accent-t:#0b1220;--ok:#4cc585;--warn:#f0b24a;--bad:#ff7a73;--okb:#173324;--warnb:#3a2d12;--badb:#3d1c1b;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:600px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.6rem;margin:0 0 6px}h2{font-size:1.15rem;margin:0 0 8px}
+p{margin:0 0 12px}.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:14px 16px;width:100%;margin-top:8px;min-height:48px}
+button.primary{background:var(--accent);color:var(--accent-t);border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.6}
+.row{display:flex;gap:10px}.row button{margin-top:8px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.q{font-size:1.2rem;font-weight:600;margin-bottom:6px}
+.hint{font-size:.92rem;color:var(--muted);margin-bottom:10px}
+.gauge{text-align:center;border-radius:16px;padding:20px;margin-bottom:14px}
+.gauge b{display:block;font-size:2.6rem;line-height:1.1}
+.gauge span{font-weight:600}
+.low{background:var(--okb);color:var(--ok)}.med{background:var(--warnb);color:var(--warn)}.high{background:var(--badb);color:var(--bad)}
+ul{padding-left:20px;margin:0 0 4px}li{margin-bottom:8px}
+li small{display:block;color:var(--muted)}
+.btn.p{background:var(--accent);color:var(--accent-t);border-color:var(--accent);font-weight:600}
+ol{padding-left:20px;margin:0 0 10px}
+.btn{display:block;text-align:center;text-decoration:none;padding:14px 16px;border-radius:12px;border:1px solid var(--line);color:var(--text);min-height:48px;margin-top:8px}
+.note{font-size:.85rem;color:var(--muted);text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+// ---- SETTINGS: fill these in. If left empty, the matching section is simply not shown. ----
+var DONATE_URL="";   // e.g. "https://ko-fi.com/yourname"
+var BIZ_EMAIL="";    // e.g. "hello@yourdomain.co.uk"
+// -----------------------------------------------------------------------------------------
+var GEN=[
+{t:"Did they contact you first, out of the blue?",h:"A call, text, email, DM or pop-up you didn’t ask for.",w:1,f:"Unexpected contact",tip:"Don’t trust unsolicited contact. Look up the organization yourself and reach out through its official website or app."},
+{t:"Are you being rushed to act right now?",h:"“Act today,” “last chance,” “your account will be closed.”",w:2,f:"Pressure to act fast",tip:"Urgency is a classic tactic to stop you thinking. Real organizations give you time to verify."},
+{t:"Are they asking for payment by gift card, crypto, wire transfer, or a payment app?",h:"Or asking you to buy gift cards and read out the numbers.",w:4,c:1,f:"Untraceable payment method",tip:"Legitimate businesses and agencies don’t demand gift cards, crypto or wire transfers. This is the strongest scam signal."},
+{t:"Are they asking for passwords, one-time codes, PINs, or ID numbers?",h:"Bank details, National Insurance number, verification codes.",w:4,c:1,f:"Request for sensitive codes or details",tip:"No real bank, company or support agent will ask for your password or a code sent to your phone."},
+{t:"Do they claim to be a bank, government agency, tech support, or a company you know?",h:"Anyone can claim this. Caller ID and logos can be faked.",w:2,f:"Claims to be an authority",tip:"Hang up and call the organization back using a number from its official website or your card. For your bank, you can dial 159."},
+{t:"Are you promised a prize, big returns, or “guaranteed” profit?",h:"Lottery wins, investment tips, easy money, inheritances.",w:3,f:"Too-good-to-be-true promise",tip:"If you didn’t enter, you didn’t win. Guaranteed high returns don’t exist."},
+{t:"Were you told to keep it secret?",h:"Not to tell family, your bank, or the store clerk.",w:3,f:"Secrecy demanded",tip:"Scammers isolate you so no one can warn you. Tell someone you trust right away."},
+{t:"Are you asked to click a link, install an app, or give remote access to your device?",h:"Including “verify your account” links and screen-sharing tools.",w:3,f:"Link, download or remote-access request",tip:"Don’t click or install. Go to the real site by typing its address yourself."},
+{t:"Are you being threatened?",h:"Arrest, lawsuit, frozen account, deportation, or harm to someone you know.",w:3,f:"Threats or intimidation",tip:"Government agencies don’t threaten arrest over the phone or by text. Hang up and verify independently."},
+{t:"Do you have to pay a fee first to get a loan, job, prize, or refund?",h:"Or are you sent a check and asked to send some money back?",w:3,f:"Upfront fee or overpayment",tip:"Real loans, jobs and prizes don’t require upfront fees. Check overpayments are a common fraud that bounces later."},
+{t:"Is it someone you’ve only met online who now needs money?",h:"A romantic interest, “friend,” or family member in an emergency.",w:3,f:"Online relationship asking for money",tip:"Call the real person on a number you already know. Never send money to someone you haven’t met in person."},
+{t:"Do they refuse to let you verify, or discourage you from calling back?",h:"Won’t give details, gets angry, or keeps you on the line.",w:2,f:"Avoids verification",tip:"Legitimate contacts welcome verification. Resistance is a red flag."},
+{t:"Does anything look off about the message or sender?",h:"Generic greeting, spelling errors, odd email address or number, mismatched web address.",w:1,f:"Suspicious details",tip:"Check the sender’s address or number carefully and search for the exact wording online."}
+];
+var SETS={};
+function mk(a){return a.map(function(r){return{t:r[0],w:r[1],f:r[2],tip:r[3],k:r[4]}})}
+SETS.buy=mk([
+["Have you paid and then been blocked or ignored?",10,"Paid, then blocked or ignored","Stop all contact and don’t send more money. Call your bank straight away (dial 159) and report it.",1],
+["Is the seller’s profile new or thin, for example only a few months old, with few friends or reviews?",3,"New or thin seller profile","Scam accounts are often new. Check the profile age, listing history and reviews."],
+["Are you asked to pay upfront before you can see, collect or try the item?",3,"Payment upfront","Don’t pay before you’ve seen the item. Pay on collection, or use the platform’s protected checkout."],
+["Do they want bank transfer, “friends and family”, or payment outside the platform’s checkout?",3,"Unprotected payment method","These payments give little or no buyer protection. Pay by card or the platform’s protected option."],
+["Is the price much lower than similar items?",2,"Price too good to be true","Compare with similar listings. Prices far below normal are a classic lure."],
+["Do they refuse to let you see the item in person, or on a live video call?",3,"Won’t let you inspect the item","Ask for a live video of the item. Walk away if they refuse."],
+["Are they pushing you onto WhatsApp or text, or to hurry because “others are interested”?",2,"Pressure or moving off-platform","Keep chats on the platform so there’s a record, and don’t be rushed."],
+["Do the photos look copied from elsewhere, or is the description vague?",2,"Copied or vague listing","Do a reverse image search on the photos to see if they appear elsewhere."]]);
+SETS.sell=mk([
+["Did they send a link or code to “receive” your payment, or ask for a code from your phone?",10,"Fake payment link or code request","Never click payment links or share codes. Real buyers don’t need either to pay you.",1],
+["Did they offer more than the asking price, or send too much and ask for the difference back?",4,"Overpayment","Overpayment scams rely on a payment that later bounces. Refund nothing until cleared funds are in your own account."],
+["Do they only show a screenshot or email as “proof” of payment, not money in your own banking app?",4,"Unverified proof of payment","Only trust money you can see in your own bank account."],
+["Do they want to send their own courier, or want the item sent before payment is clear?",3,"Courier or shipping before payment","Don’t hand over or send the item until cleared funds are in your account."],
+["Do they want to pay by cheque, or from someone else’s account?",3,"Cheque or third-party payment","Cheques can bounce long after you’re credited. Ask for a bank transfer or cash on collection."],
+["Is the buyer’s profile new or thin, or do they ask nothing about the item?",2,"New or thin buyer profile","Be cautious of new accounts and buyers who show no interest in the item."],
+["Are they pushing you onto WhatsApp or text, or to hurry?",2,"Pressure or moving off-platform","Keep chats on the platform and don’t be rushed."]]);
+SETS.bank=mk([
+["Are you being asked to move money to a “safe account”?",10,"“Safe account” request","No bank or police officer will ever ask this. Hang up and dial 159.",1],
+["Are you being asked for your full PIN, password, or a code sent to your phone?",10,"Request for PIN, password or code","Never share these with anyone, even someone who sounds official.",1],
+["Are you being asked to withdraw cash, or hand a card or cash to a courier?",10,"Cash or card collection","Banks and police never send couriers to collect cards or cash. Hang up and call 159.",1],
+["Are you asked to install an app or give remote access to your device?",4,"Remote access or app install","Never install software for someone who contacted you."],
+["Are you told not to tell the bank, staff, or family?",3,"Secrecy demanded","Scammers isolate you so no one can warn you. Tell someone you trust."],
+["Are they pressuring you to act immediately?",2,"Pressure to act fast","Real banks give you time. Hang up and call 159 yourself."],
+["Do they claim to be the police, or to have “detected fraud” on your account?",2,"Claims of police or fraud team","Anyone can claim this, and caller ID can be faked."]]);
+SETS.parcel=mk([
+["Are they asking for your card details to rebook or release the parcel?",10,"Card details requested","A fee page asking for card details is a known scam. Close it and check with the courier’s official app.",1],
+["Were you NOT expecting a parcel from this company?",2,"Unexpected parcel","If you’re not expecting anything, treat it as suspicious."],
+["Is a small fee or “redelivery charge” requested?",3,"Small fee request","Check your real order account instead of using the link."],
+["Does the link look unusual, shortened, or not the courier’s official website?",3,"Suspicious link","Don’t click. Open the courier’s official app or type its address yourself."],
+["Does it say “last chance”, or that the parcel will be returned soon?",2,"Urgency","Urgency is a tactic. Check your real order account."],
+["Did it come from an unknown mobile number or personal email?",2,"Odd sender","Couriers use official channels. Check the sender carefully."]]);
+SETS.gov=mk([
+["Does it offer a tax refund or rebate, or ask you to “claim” money?",10,"Refund or rebate offer","HMRC never sends texts or emails offering refunds. Check GOV.UK directly.",1],
+["Are you asked to pay by gift card, crypto, or transfer to a new account?",10,"Untraceable payment method","Government bodies don’t demand these payment methods.",1],
+["Are you threatened with arrest, penalties, court, or bailiffs?",4,"Threats","Agencies don’t threaten arrest by text or call. Hang up and verify on GOV.UK."],
+["Are you asked to log in, or give personal or bank details, through a link?",4,"Details via link","Don’t click. Go to GOV.UK yourself by typing the address."],
+["Is there pressure to act within hours?",2,"Pressure to act fast","Real agencies give you time."],
+["Was it unexpected, from a number or email you don’t recognise?",1,"Unexpected contact","Check on GOV.UK before doing anything."]]);
+SETS.love=mk([
+["Have they asked you for money, gift cards, or crypto?",10,"Asked for money","Never send money to someone you haven’t met in person, however real it feels.",1],
+["Have they asked you to invest or trade crypto with them?",6,"Investment with online partner","This is a common scam pattern. Don’t invest on a partner’s advice."],
+["Have you never met in person, or do they avoid video calls with excuses?",3,"Avoids meeting or video","Ask for a live video call. Repeated excuses are a warning sign."],
+["Did they declare love or talk about a future very quickly?",2,"Fast-moving relationship","Scammers build intense trust quickly."],
+["Do they describe a crisis, such as hospital, being stuck abroad, or customs fees?",3,"Crisis story","These stories are designed to make you act out of care."],
+["Do they work abroad (military, oil rig, doctor) or have photos that look too perfect?",2,"Typical scammer profile","Do a reverse image search on their photos."],
+["Have they asked you to keep the relationship secret?",2,"Secrecy","Tell someone you trust. Scammers want you isolated."]]);
+SETS.invest=mk([
+["Are you asked to pay a fee or tax to withdraw your profits?",10,"Fee to withdraw","Genuine platforms don’t charge surprise fees to release your money. Stop paying.",1],
+["Are guaranteed or very high returns promised?",4,"Guaranteed or very high returns","No genuine investment is guaranteed."],
+["Is the firm missing from the FCA register, or have you not been able to check?",4,"Not FCA-authorised or unchecked","Check the FCA register and Warning List at fca.org.uk before investing."],
+["Did they contact you unprompted, for example on social media or a WhatsApp “tips” group?",3,"Unsolicited approach","Cold approaches about investing are a major red flag."],
+["Are you pushed to decide fast because of a “limited-time” opportunity?",2,"Pressure","Real opportunities will wait while you check."],
+["Are you asked to pay in crypto, or into a personal account?",3,"Unusual payment destination","Legitimate firms don’t take payment into personal accounts."],
+["Is a celebrity or “expert” endorsing it, or are you shown impressive profit screenshots?",2,"Endorsements or fake profits","Celebrity ads are often fake, and screenshots are easy to fake."]]);
+SETS.job=mk([
+["Are you asked to pay for training, equipment, a DBS check, or registration?",10,"Fee to start work","A genuine employer never asks you to pay to start a job.",1],
+["Are you asked to top up an account or deposit crypto to unlock “commission”?",10,"Top-up or deposit for earnings","This is the “task scam” pattern. Stop paying.",1],
+["Did the offer arrive by unsolicited text or WhatsApp, with no real interview?",3,"Unsolicited offer, no interview","Real recruiters interview properly."],
+["Is the pay very high for simple work, like liking videos or boosting products?",3,"Pay too good to be true","High pay for easy tasks is a strong warning sign."],
+["Are you asked for ID, bank details or National Insurance number before a contract?",3,"Early ID or bank details request","Never share these before a verified contract."],
+["Is everything done by chat app, with little verifiable company information?",2,"Unverifiable company","Check the company on Companies House and its official website."],
+["Were you sent a cheque to buy equipment and asked to send some money back?",4,"Cheque and refund","The cheque will bounce after you’ve sent real money."]]);
+SETS.fam=mk([
+["Is this from a new or unknown number claiming to be a relative or friend?",4,"New number claiming to be someone you know","Call them on the number you already have."],
+["Are you being asked to send money urgently?",3,"Urgent money request","Pause, then confirm with them directly."],
+["Are you told not to call, or to keep it secret?",3,"Secrecy or no calls","A real person in need will talk to you."],
+["Is the payment to an account not in their name, or by gift card or crypto?",4,"Unusual payment","Be very wary of any request to pay a third-party account."],
+["Can’t or won’t they speak by phone or video?",3,"Avoids a call","Ask a question only they would know, or use a family safe word."],
+["Did a call sound like them but feel odd or unexpected?",2,"Possible AI voice","Voices can be cloned. Hang up and call them back."]]);
+SETS.tech=mk([
+["Are you asked to install software or give remote access?",10,"Remote access request","Never allow remote access to someone who contacted you. If you already have, disconnect and call your bank.",1],
+["Are you asked to log into your bank, or to receive or send money to “fix” it?",10,"Banking login or refund trick","Never log into your bank while someone else is watching.",1],
+["Are you asked to pay by gift card?",10,"Gift card payment","No genuine support service takes gift cards.",1],
+["Did they contact you first, or did a pop-up tell you to call a number?",3,"Unsolicited contact or pop-up","Real tech companies don’t cold-call about viruses."],
+["Does a pop-up claim a virus, or lock your screen?",3,"Virus or locked-screen alert","These are scare tactics. Close the browser, restart, and don’t call the number."],
+["Are you being rushed or scared?",2,"Pressure","Take your time. Genuine support will wait."]]);
+SETS.utility=mk([
+["Do they say you owe money, or that your supply will be cut off?",3,"Threat of disconnection","Check your real account or bill, or call the number printed on it."],
+["Are you offered a refund, rebate or discount on a bill?",3,"Refund or discount offer","Check your real account. Genuine refunds don’t need your card details."],
+["Are you asked to pay by gift card, or to a new account?",10,"Unusual payment method","Utility firms don’t take gift cards or ask for payment to personal accounts.",1],
+["Are you asked for card or bank details, or for access to your device?",4,"Details or device access requested","Never give these to someone who contacted you."],
+["Did they contact you unexpectedly and rush you?",2,"Unexpected and rushed","Hang up and call the company using a number you trust."]]);
+SETS.acct=mk([
+["Does it say your account is locked, suspended, or that a payment was made?",3,"Account alert","Go to the official app or website yourself and check there."],
+["Does it ask you to log in through a link?",4,"Login via link","Don’t use the link. Type the website address or use the official app."],
+["Does it ask you to call a number to cancel a payment or fix the problem?",4,"Call-this-number trick","Numbers in scam messages lead to scammers. Use the number on the real website."],
+["Does the sender address or web address look slightly wrong?",3,"Lookalike sender or address","Check spellings and domain names closely."],
+["Are you asked for a password or a code sent to your phone?",10,"Password or code request","No genuine company asks for these by message or call.",1]]);
+SETS.charity=mk([
+["Did they approach you unexpectedly by call, text, social media or at the door?",2,"Unsolicited approach","Give through the charity’s own website instead."],
+["Can’t you find a registered charity number, or does it not match the charity’s register entry?",4,"Charity not verifiable","Check the register of charities for England and Wales, Scotland or Northern Ireland."],
+["Are you asked to pay by gift card, cash in hand, or transfer to a personal account?",10,"Unusual donation method","Genuine charities don’t ask for these.",1],
+["Is there pressure to give right now, or a very emotive story?",3,"Pressure to give now","Real charities will still be there tomorrow."],
+["Is it a disaster appeal or personal fundraiser you can’t verify?",3,"Unverified appeal","Donate only through well-known, verified channels."]]);
+SETS.rent=mk([
+["Are you asked to pay a deposit or fee before viewing or meeting?",10,"Deposit before viewing","Never pay before you’ve seen a property and met the agent or landlord.",1],
+["Is the price well below similar places?",3,"Price too good to be true","Compare with similar listings."],
+["Is the host “abroad” and unable to show the property, or only offers to post keys?",4,"Absent host","Insist on a viewing, in person or a live video, with the agent."],
+["Are you asked to pay by transfer outside the platform, or in cash or crypto?",4,"Payment outside platform","Use the platform’s protected payment."],
+["Are the photos copied, or the address not matching the listing?",3,"Copied listing","Reverse image search the photos and check the address online."]]);
+SETS.tkpet=mk([
+["Have you paid and then been blocked or ignored?",10,"Paid, then blocked or ignored","Stop paying, call your bank (dial 159) and report it.",1],
+["Are you asked to pay by bank transfer or “friends and family”?",4,"Unprotected payment","Pay by card or a protected method."],
+["Won’t they show the ticket, or the animal, in person or live on video?",4,"Won’t show the item","Walk away if they refuse a live video."],
+["Is it unusually cheap, or do they ask for extra fees such as transport or insurance?",3,"Too cheap or extra fees","Requests for extra fees after payment are a classic sign."],
+["Is the seller new, or do they only use WhatsApp or text?",3,"New seller or off-platform","Use official ticket platforms and licensed breeders or rescues."]]);
+SETS.boss=mk([
+["Does it claim to be from your boss or a director, but from a personal email or new number?",4,"Impersonated executive","Check with them using a known number or in person."],
+["Are you asked for an urgent payment, or to buy gift cards?",5,"Urgent payment or gift cards","Don’t act on the message. Check through your normal approval process."],
+["Are you told to keep it confidential or skip normal approval?",4,"Bypasses approval","Genuine requests follow your company’s process."],
+["Are they “unavailable” to call, such as in a meeting or travelling?",2,"Can’t take calls","Verify another way before acting."],
+["Are you asked for staff details, payroll or login information?",4,"Staff or payroll data request","Report it to your IT or security team."]]);
+SETS.invoice=mk([
+["Has someone changed their bank details by email or message?",10,"Changed bank details","Phone them on a number you already trust to confirm before paying.",1],
+["Is the invoice unexpected, or for work you don’t recall?",4,"Unexpected invoice","Check against your own records and orders."],
+["Is there urgency or a threat of penalties?",3,"Urgency or penalties","Take time to verify."],
+["Is the sender’s email slightly different from the usual contact?",3,"Lookalike email address","Check the full address, not just the display name."],
+["Is it a house purchase or legal payment with bank details sent only by email?",4,"Conveyancing payment risk","Confirm the account by phone with your solicitor using a number you already have."]]);
+SETS.loan=mk([
+["Are you asked for a fee upfront before the loan is paid?",10,"Upfront loan fee","Legitimate lenders don’t charge fees before lending.",1],
+["Is approval guaranteed regardless of credit history?",4,"Guaranteed approval","No lender can guarantee this."],
+["Is the lender missing from the FCA register?",4,"Not FCA-authorised","Check the FCA register before you proceed."],
+["Did they contact you unprompted by text, call or social media?",3,"Unsolicited offer","Be wary of loans you didn’t ask for."],
+["Are you asked for ID, bank login, or payment by gift card?",4,"Sensitive details or gift cards","Never share these with an unverified lender."]]);
+SETS.prize=mk([
+["Are you told you’ve won something you didn’t enter, or inherited money?",5,"Unexpected win or inheritance","You can’t win a draw you didn’t enter."],
+["Are you asked to pay a fee, tax or delivery charge to claim it?",10,"Fee to claim winnings","Real prizes are free to claim.",1],
+["Are you told to keep it secret or reply quickly?",3,"Secrecy or rush","Take time and tell someone you trust."],
+["Does it come from an overseas “lawyer”, “banker” or distant relative?",4,"Overseas contact with money","These are advance-fee scams."],
+["Are you asked for personal or bank details to claim?",4,"Personal details to claim","Don’t share them."]]);
+SETS.door=mk([
+["Did they turn up unannounced saying urgent work is needed?",4,"Unannounced urgent work","Never agree to work on the doorstep."],
+["Are you pressured to agree and pay today, or cash only?",4,"Pressure or cash only","Take time and get several written quotes."],
+["Are they taking you to a bank or cash machine, or asking for full payment upfront?",10,"Taken to withdraw cash","Say no and call 999 if you feel unsafe.",1],
+["Is there no written quote, company address or contact details?",3,"No written details","Insist on a written quote and a verifiable address."],
+["Is it a cheap deal using “left-over materials”?",2,"Leftover materials claim","This is a common pretext."]]);
+SETS.qr=mk([
+["Is the QR code a sticker, over or beside another code in public, such as a parking meter?",5,"Sticker over a code","Check whether the code looks tampered with."],
+["Does it take you to a page asking for card details?",4,"Card details page","Use the operator’s official app or website instead."],
+["Does the web address not match the operator’s?",4,"Address mismatch","Check the address that opens."],
+["Does it ask you to download an app or sign up?",3,"App or sign-up request","Only use official apps from your app store."],
+["Is the payment going to a person or an odd name?",3,"Payment to a person","Check who the payee is."]]);
+SETS.wrong=mk([
+["Is it a text or message from an unknown number that seems sent by mistake?",3,"Wrong-number opener","Don’t reply. Block and report it."],
+["Do they want to keep chatting, or move to WhatsApp or Telegram?",3,"Pulled into a chat","Scammers build trust slowly."],
+["Did the chat turn to investing, crypto or money?",5,"Turns to investing","This is a known scam path."],
+["Is the profile friendly but impossible to verify?",2,"Unverifiable profile","Reverse image search their photos."],
+["Are you asked to send money or install an app?",10,"Money or app request","Stop all contact.",1]]);
+SETS.hacked=mk([
+["Does your friend say they didn’t send it?",10,"Friend’s account hacked","Their account is likely compromised. Don’t click and tell them.",1],
+["Did a friend’s account suddenly message you with a link or odd request?",4,"Odd message from a friend","Contact them another way."],
+["Does it say “is this you in this video?” or similar?",5,"“Is this you?” lure","Don’t click. This steals logins."],
+["Are you asked to log in, vote or click a page?",4,"Login or vote page","Don’t use the link."],
+["Are you asked for money, codes, or to forward the message to others?",5,"Money, codes or forwarding","Never share codes."]]);
+SETS.invest.push(["Are you being encouraged to transfer or unlock a pension?",4,"Pension transfer pressure","Get free guidance from MoneyHelper before moving any pension."]);
+var TL={buy:"Buying something online",sell:"Selling something online",bank:"Bank or police impersonation",parcel:"Delivery or parcel message",gov:"HMRC or government",love:"Online friend or romance",invest:"Investment, crypto or pension",job:"Job offer",fam:"Family or friend asking for money",tech:"Tech support or virus warning",utility:"Utility, broadband or phone company",acct:"Online account or brand alert",charity:"Charity or fundraiser",rent:"Rental or holiday booking",tkpet:"Tickets or pet sale",boss:"Boss or colleague request",invoice:"Supplier invoice or changed bank details",loan:"Loan offer",prize:"Prize, lottery or inheritance",door:"Doorstep trader",qr:"QR code or parking payment",wrong:"Wrong-number message",hacked:"Hacked friend’s account",other:"General check"};
+var MAP={bank:"bank",gov:"gov",parcel:"parcel",util:"utility",brand:"acct",kn:"fam",on:"love",buy:"buy",sell:"sell",job:"job",boss:"boss",inv:"invoice",char:"charity",rent:"rent",tech:"tech",fin:"invest",loan:"loan",prize:"prize",tk:"tkpet",door:"door",qr:"qr",wrong:"wrong",st:"other"};
+var FS=[
+{q:"What are you being asked to do?",o:[["pay","Make a payment or send money"],["info","Share information, a code or a password"],["click","Click a link, scan a code or install something"],["buy","Buy or sell something"],["offer","Take up an offer or opportunity"],["unsure","Nothing yet, but something feels off"]]},
+{q:"Who is it from, or who is asking?",o:[["bank","My bank, or someone saying they’re the police"],["gov","HMRC or another government body"],["co","A company or service"],["pe","A person"],["bs","Buying, selling or renting"],["wk","Work or a business"],["mo","A money offer, investment or charity"],["st","Someone else, or I’m not sure"]]},
+{q:"How are they asking for payment or information?",o:[["bank","A bank transfer"],["card","Card or online payment"],["gift","Gift cards"],["crypto","Cryptocurrency"],["cash","Cash, or handing something to a courier"],["code","A link, code or app"],["none","Nothing has been asked yet"]]},
+{q:"How did it reach you?",o:[["call","Phone call"],["text","Text or WhatsApp"],["email","Email"],["social","Social media or a dating app"],["site","A marketplace or website"],["post","Post or in person"]]}];
+var QS=GEN,type="other",hit=0,lastQ=0,FA=[],PRE=[];
+function fstep(n){var s=FS[n];
+app.innerHTML='<div class="bar"><i style="width:'+(n/12*100)+'%"></i></div><div class="card"><p class="muted">Step '+(n+1)+' of 4</p><div class="q"></div>'+s.o.map(function(x){return'<button data-o="'+x[0]+'"></button>'}).join("")+'</div><button id="back">← Back</button>';
+app.querySelector(".q").textContent=s.q;
+var bs=app.querySelectorAll("[data-o]");s.o.forEach(function(x,k){bs[k].textContent=x[1]});
+bs.forEach(function(b){b.onclick=function(){if(n===1&&GR[b.dataset.o])return sub(b.dataset.o);FA[n]=b.dataset.o;if(n<3)fstep(n+1);else begin()}});
+document.getElementById("back").onclick=function(){if(n>0)fstep(n-1);else intro()}}
+var GR={co:[["parcel","A delivery company"],["util","A utility, broadband or phone company"],["brand","A big brand or online account (Amazon, PayPal…)"],["tech","Tech support or a virus warning"],["qr","A QR code or parking payment"]],
+pe:[["kn","Someone I know (family or friend)"],["on","Someone I met online"],["wrong","A stranger who texted by ‘mistake’"],["door","Someone at my door"]],
+bs:[["buy","Someone selling to me"],["sell","Someone buying from me"],["tk","A seller of tickets or a pet"],["rent","A landlord, holiday or rental host"]],
+wk:[["job","An employer or recruiter"],["boss","My boss or a colleague"],["inv","A supplier, contractor or solicitor"]],
+mo:[["fin","An investment, crypto or pension firm"],["loan","A lender or debt helper"],["prize","A prize, lottery or inheritance"],["char","A charity or fundraiser"]]};
+function sub(g){var o=GR[g];
+app.innerHTML='<div class="bar"><i style="width:'+(2/12*100)+'%"></i></div><div class="card"><p class="muted">Step 2 of 4</p><div class="q">Which fits best?</div>'+o.map(function(x){return'<button data-o="'+x[0]+'"></button>'}).join("")+'</div><button id="back">← Back</button>';
+var bs=app.querySelectorAll("[data-o]");o.forEach(function(x,k){bs[k].textContent=x[1]});
+bs.forEach(function(b){b.onclick=function(){FA[1]=b.dataset.o;fstep(2)}});
+document.getElementById("back").onclick=function(){fstep(1)}}
+function begin(){var w=FA[1],a=FA[0],c=FA[3],m=FA[2],t=MAP[w]||"other";
+if(w==="kn"&&c==="social"&&a==="click")t="hacked";if(w==="on"&&a==="offer")t="invest";
+type=t;QS=SETS[t]||GEN;ans=[];i=0;hit=0;PRE=[];
+if(m==="gift")PRE.push({f:"Gift cards requested",tip:"No genuine organisation takes gift cards as payment.",w:10,k:1});
+if(m==="crypto")PRE.push({f:"Crypto payment requested",tip:"Be very wary of any unsolicited request to pay in crypto.",w:4});
+if(m==="cash")PRE.push({f:"Cash or courier handover",tip:"Never hand cash, cards or PINs to someone who turns up or sends a courier.",w:5});
+if(m==="code")PRE.push({f:"Link, code or app requested",tip:"Don’t click, share codes, or install anything for someone who contacted you.",w:2});
+if(PRE.some(function(x){return x.k})){hit=1;lastQ=0;i=QS.length;return acted()}
+q()}
+var app=document.getElementById("app"),ans=[],i=-1,act="none",REP="";
+function el(h){var d=document.createElement("div");d.innerHTML=h;return d}
+function intro(){
+app.innerHTML='<h1>🛡️ Scam Checker</h1><p class="muted">Tell us what it’s about, then answer a few quick yes/no questions. You’ll get a risk score and clear next steps.</p><div class="card"><p>It takes about two minutes. Nothing you answer here is stored.</p><button class="primary" id="go">Start</button></div><a class="btn" href="learn.html">📖 Scam guide: what to watch out for</a><p class="note">This is a guide, not a guarantee. When in doubt, verify through official channels.</p>'+extras()+'<p class="note"><a href="privacy.html">Privacy notice</a></p>';
+document.getElementById("go").onclick=function(){FA=[];fstep(0)}}
+function q(){
+if(i>=QS.length)return acted();
+var x=QS[i];
+app.innerHTML='<div class="bar"><i style="width:'+((i+4)/(QS.length+5)*100)+'%"></i></div><div class="card"><p class="muted">Question '+(i+5)+' of '+(QS.length+5)+'</p><div class="q"></div><div class="hint"></div><button class="primary" data-a="1">Yes</button><button data-a="0">No</button><button data-a="-1">Not sure</button></div>'+'<button id="back">← Back</button>';
+app.querySelector(".q").textContent=x.t;app.querySelector(".hint").textContent=x.h;
+app.querySelectorAll("[data-a]").forEach(function(b){b.onclick=function(){ans[i]=+b.dataset.a;if(ans[i]===1&&(QS[i].k||QS[i].c)){hit=1;lastQ=i;i=QS.length;acted();return}i++;q()}});
+var bk=document.getElementById("back");bk.onclick=function(){if(i>0){i--;q()}else fstep(3)}}
+function acted(){
+app.innerHTML='<div class="bar"><i style="width:'+(QS.length/(QS.length+1)*100)+'%"></i></div><div class="card"><p class="muted">Last question</p><div class="q">Have you already responded?</div><div class="hint">This changes the advice we give you.</div><button data-v="none">No, I haven’t done anything</button><button data-v="info">I clicked a link or shared info/codes</button><button data-v="money">I sent money or gift card numbers</button></div><button id="back">← Back</button>';
+app.querySelectorAll("[data-v]").forEach(function(b){b.onclick=function(){act=b.dataset.v;report()}});
+document.getElementById("back").onclick=function(){i=hit?lastQ:QS.length-1;hit=0;q()}}
+function extras(){var h="";
+if(BIZ_EMAIL)h+='<div class="card"><h2>Run a bank, charity or council?</h2><p class="muted">Get a version of this checker with your own branding for your customers.</p><a class="btn" href="mailto:'+encodeURI(BIZ_EMAIL)+'?subject=Scam%20Checker%20for%20my%20organisation">Get in touch</a></div>';
+if(DONATE_URL)h+='<div class="card"><h2>Support this free tool</h2><p class="muted">Scam Checker is free and has no ads. If it helped, you can chip in towards running costs. This is optional and never affects your result.</p><a class="btn" href="'+encodeURI(DONATE_URL)+'" target="_blank" rel="noopener noreferrer">Donate (opens another site)</a></div>';
+return h}
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+function report(){
+var raw=0,crit=false,fl=[];
+QS.forEach(function(x,k){if(ans[k]===1){raw+=x.w;fl.push(x);if(x.c||x.k)crit=true}});PRE.forEach(function(x){raw+=x.w;fl.push(x);if(x.k)crit=true});
+var pct=Math.min(99,raw*7);if(crit)pct=100;if(type==="buy"&&ans[1]===1&&ans[2]===1)pct=Math.max(pct,75);if(act!=="none")pct=Math.max(pct,60);
+var lvl,lab,cls,sum;
+if(pct>=70){cls="high";lab=crit?"Definitely a scam":"Very likely a scam";sum="Stop all contact. Don’t pay, click, or share anything."}
+else if(pct>=35){cls="med";lab="Suspicious";sum="Pause and verify independently before doing anything."}
+else{cls="low";lab="Low risk";sum="No major warning signs, but stay careful and verify if money or personal info is involved."}
+var unsure=ans.filter(function(a){return a===-1}).length;
+var steps={high:["Stop replying. Don’t click links, open attachments, or call numbers they gave you.","Block the sender and delete the message.","Tell a trusted friend or family member what happened.","Report it (see below)."],med:["Don’t respond or act yet.","Contact the organization using a phone number or website you find yourself, not the one in the message.","Search online for the exact wording plus “scam.”","If it still seems off, treat it as a scam and report it."],low:["Verify the sender through an official channel if anything is still unclear.","Never share codes or passwords, even if everything looks fine.","If something changes (urgency, payment requests), re-run this check."]}[cls];
+var h='<p class="muted" style="text-align:center;margin-bottom:8px">Checked: '+TL[type]+'</p><div class="gauge '+cls+'"><b>'+pct+'%</b><span>'+lab+'</span></div><div class="card"><p>'+sum+(unsure?' <span class="muted">('+unsure+' “not sure” answers weren’t counted. Try to check them.)</span>':'')+'</p></div>';
+h+='<div class="card"><h2>Red flags you reported</h2>'+(fl.length?'<ul>'+fl.map(function(x){return'<li><b>'+esc(x.f)+'</b><small>'+esc(x.tip)+'</small></li>'}).join("")+'</ul>':'<p class="muted">None.</p>')+'</div>';
+h+='<div class="card"><h2>What to do next</h2><ul>'+steps.map(function(s){return'<li>'+esc(s)+'</li>'}).join("")+'</ul></div>';
+if(act==="info")h+='<div class="card"><h2>Because you shared info or clicked</h2><ul><li>Change passwords for affected accounts, starting with email and banking. Turn on two-factor authentication.</li><li>Call your bank or card issuer and tell them. Watch statements closely.</li><li>If you installed an app or gave remote access, uninstall it, disconnect from the internet, and run a security scan.</li><li>If ID details were shared, check your credit report and consider Cifas Protective Registration.</li></ul></div>';
+if(act==="money")h+='<div class="card"><h2>Because you sent money</h2><ul><li>Act now: call your bank or payment provider (dial 159 to reach your bank) and ask to stop or recall the payment. Speed matters.</li><li>Bank transfer scams may be eligible for reimbursement under the UK’s APP fraud rules, so ask your bank.</li><li>Gift cards: contact the card company with the card numbers and receipts.</li><li>Crypto: report to the exchange you used.</li><li>Expect follow-up “recovery” scams. Anyone offering to get your money back for a fee is also a scammer.</li></ul></div>';
+var rn=(pct>=70||act!=="none");
+if(rn){var st='';
+if(act==="money")st+='<li><b>Call your bank now.</b> Dial 159 or use the number on your card, and ask them to stop or recall the payment. The sooner you call, the better.</li>';
+if(act==="info")st+='<li><b>Call your bank</b> (dial 159) if you shared bank details or codes, and change the passwords for any affected accounts.</li>';
+st+='<li><b>Report it to the police:</b> reportfraud.police.uk or 0300 123 2040 (England, Wales and Northern Ireland). In Scotland, call Police Scotland on 101.</li><li><b>Forward scam texts to 7726</b> (free) and scam emails to report@phishing.gov.uk.</li>';
+h+='<div class="card" style="border-color:var(--bad)"><h2>🚨 Report this scam</h2><p>Reporting helps the police stop these criminals and protect other people. It only takes a few minutes.</p><ol>'+st+'</ol><p><b>Have ready:</b> phone numbers, email addresses, website links, dates and times, any payment details, and screenshots. Take screenshots before you delete anything.</p><p class="muted">If you’re in immediate danger, call 999.</p><a class="btn p" href="https://www.reportfraud.police.uk/" target="_blank" rel="noopener noreferrer">Report this scam (opens another site)</a></div>'}
+else h+='<div class="card"><h2>Where to report</h2><ul><li><b>Report Fraud</b> (England, Wales, NI): reportfraud.police.uk or 0300 123 2040. In Scotland, call Police Scotland on 101.</li><li><b>Suspicious texts:</b> forward to 7726 (free).</li><li><b>Suspicious emails:</b> forward to report@phishing.gov.uk.</li><li><b>Investment scams:</b> check the FCA Warning List at fca.org.uk/scamsmart.</li><li>If you’re in immediate danger, call 999.</li></ul><p class="muted">Reporting helps protect others. <a href="learn.html">Read the Scam Guide</a> for how to stay safe.</p></div>';
+h+='<button id="copy">Copy report</button><button id="again">Check something else</button>'+((act==="none"&&pct<70)?extras():'')+'<p class="note">This tool gives guidance only and can’t guarantee whether something is or isn’t a scam. <a href="privacy.html">Privacy notice</a></p>';
+app.innerHTML=h;window.scrollTo(0,0);
+REP="Scam Checker report\nRisk: "+pct+"% – "+lab+"\nRed flags: "+(fl.length?fl.map(function(x){return x.f}).join("; "):"none")+"\nAlready responded: "+({none:"no",info:"shared info/clicked",money:"sent money"}[act])+"\nNext steps: "+steps.join(" ");
+document.getElementById("again").onclick=function(){act="none";intro()};
+document.getElementById("copy").onclick=function(){var b=this;try{navigator.clipboard.writeText(REP).then(function(){b.textContent="Copied ✓"},function(){b.textContent="Couldn’t copy"})}catch(e){b.textContent="Couldn’t copy"}};
+}
+try{if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0)navigator.serviceWorker.register("sw.js")}catch(e){}
+intro();
+</script>
+</body>
+</html>
